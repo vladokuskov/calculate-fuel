@@ -2,11 +2,10 @@
 import { ref, watch, onMounted } from 'vue';
 
 const cars = [
-    { name: 'Renault Scenic II', cityFuelConsumption: 8, highwayFuelConsumption: 6.4 },
+    { name: 'Renault Scenic II', cityFuelConsumption: 8, highwayFuelConsumption: 6.4, price: 44 },
 ];
 
 const selectedCar = ref(cars[0]);
-const fuelPriceForLiter = ref(44) // UAH
 const selectedRangeType = ref('city');
 const range = ref(0);
 
@@ -24,22 +23,23 @@ const updateFuelConsumption = () => {
 
 const calculateTotalFuelPrice = () => {
     if (range.value >= 0) {
-        totalFuelPrice.value = ((range.value * fuelConsumption.value) / 100) * fuelPriceForLiter.value;
+        totalFuelPrice.value = ((range.value * fuelConsumption.value) / 100) * selectedCar.value.price;
     }
 };
 
-
 onMounted(() => {
-    const rangeType = localStorage.getItem('rangeType', selectedRangeType);
-    const savedRange = localStorage.getItem('range', selectedRangeType);
-
+    const rangeType = localStorage.getItem('rangeType');
+    const savedRange = localStorage.getItem('range');
+    const savedCar = localStorage.getItem('carType');
 
     if (savedRange) {
         range.value = JSON.parse(savedRange)
     }
-
     if (rangeType) {
         selectedRangeType.value = JSON.parse(rangeType)
+    }
+    if (savedCar) {
+        selectedCar.value = JSON.parse(savedCar)
     }
 
     updateFuelConsumption();
@@ -47,6 +47,11 @@ onMounted(() => {
 
 watch(selectedRangeType, () => {
     localStorage.setItem('rangeType', JSON.stringify(selectedRangeType.value));
+    updateFuelConsumption();
+});
+
+watch(selectedCar, () => {
+    localStorage.setItem('carType', JSON.stringify(selectedCar.value));
     updateFuelConsumption();
 });
 
@@ -58,7 +63,7 @@ watch(range, () => {
 <template>
     <div class="form-wrapper">
         <h1>Fuel Price ⛽</h1>
-        <section class="car-selection">
+        <section>
             <label for="car">Select Car:</label>
             <select v-model="selectedCar" @change="updateFuelConsumption" name="car">
                 <option v-for="car in cars" :key="car.name" :value="car">
@@ -66,21 +71,21 @@ watch(range, () => {
                 </option>
             </select>
         </section>
-        <section class="range-type">
+        <section>
             <label for="range">Range Type:</label>
             <select v-model="selectedRangeType" name="range">
                 <option value="city">City</option>
                 <option value="highway">Highway</option>
             </select>
         </section>
-        <section class="range-distance">
+        <section>
             <label for="distance">Range (km):</label>
             <input type="number" name="distance" v-model="range" @input="calculateTotalFuelPrice" />
         </section>
-        <section class="fuel-consumption">
+        <section>
             <p>Fuel Consumption (L/100km): {{ fuelConsumption }}</p>
         </section>
-        <section class="total-fuel-price">
+        <section>
             <p>Total Fuel Price: {{ totalFuelPrice.toFixed(0) }} UAH</p>
         </section>
     </div>
