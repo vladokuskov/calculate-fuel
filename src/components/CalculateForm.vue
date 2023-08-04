@@ -1,46 +1,55 @@
 <script setup>
 import { ref, watch, onMounted } from 'vue';
 
-const cars = [
-    { name: 'Renault Scenic II', cityFuelConsumption: 8, highwayFuelConsumption: 6.4, price: 44 },
-];
 
-const selectedCar = ref(cars[0]);
 const selectedRangeType = ref('city');
 const range = ref(0);
 
+const priceForLiter = ref(0)
+const cityFuelConsumption = ref(0)
+const highwayFuelConsumption = ref(0)
 const fuelConsumption = ref(0);
 const totalFuelPrice = ref(0);
 
 const updateFuelConsumption = () => {
     if (selectedRangeType.value === 'city') {
-        fuelConsumption.value = selectedCar.value.cityFuelConsumption;
+        fuelConsumption.value = cityFuelConsumption.value;
     } else {
-        fuelConsumption.value = selectedCar.value.highwayFuelConsumption;
+        fuelConsumption.value = highwayFuelConsumption.value;
     }
     calculateTotalFuelPrice();
 };
 
 const calculateTotalFuelPrice = () => {
     if (range.value >= 0) {
-        totalFuelPrice.value = ((range.value * fuelConsumption.value) / 100) * selectedCar.value.price;
+        totalFuelPrice.value = ((range.value * fuelConsumption.value) / 100) * priceForLiter.value;
     }
 };
 
 onMounted(() => {
     const rangeType = localStorage.getItem('rangeType');
     const savedRange = localStorage.getItem('range');
-    const savedCar = localStorage.getItem('carType');
+    const savedPriceForLiter = localStorage.getItem('priceForLiter');
+    const savedCityFuelConsumption = localStorage.getItem('cityFuelConsumption');
+    const savedHighwayFuelConsumption = localStorage.getItem('highwayFuelConsumption');
+
 
     if (savedRange) {
-        range.value = JSON.parse(savedRange)
+        range.value = JSON.parse(savedRange);
     }
     if (rangeType) {
-        selectedRangeType.value = JSON.parse(rangeType)
+        selectedRangeType.value = JSON.parse(rangeType);
     }
-    if (savedCar) {
-        selectedCar.value = JSON.parse(savedCar)
+    if (savedPriceForLiter) {
+        priceForLiter.value = JSON.parse(savedPriceForLiter);
     }
+    if (savedCityFuelConsumption) {
+        cityFuelConsumption.value = JSON.parse(savedCityFuelConsumption);
+    }
+    if (savedHighwayFuelConsumption) {
+        highwayFuelConsumption.value = JSON.parse(savedHighwayFuelConsumption);
+    }
+
 
     updateFuelConsumption();
 })
@@ -50,27 +59,29 @@ watch(selectedRangeType, () => {
     updateFuelConsumption();
 });
 
-watch(selectedCar, () => {
-    localStorage.setItem('carType', JSON.stringify(selectedCar.value));
+watch(range, () => {
+    localStorage.setItem('range', JSON.stringify(range.value));
+});
+
+watch(priceForLiter, () => {
+    localStorage.setItem('priceForLiter', JSON.stringify(priceForLiter.value));
+    calculateTotalFuelPrice();
+});
+
+watch(cityFuelConsumption, () => {
+    localStorage.setItem('cityFuelConsumption', JSON.stringify(cityFuelConsumption.value));
     updateFuelConsumption();
 });
 
-watch(range, () => {
-    localStorage.setItem('range', JSON.stringify(range.value));
+watch(highwayFuelConsumption, () => {
+    localStorage.setItem('highwayFuelConsumption', JSON.stringify(highwayFuelConsumption.value));
+    updateFuelConsumption();
 });
 </script>
 
 <template>
     <div class="form-wrapper">
         <h1>Fuel Price ⛽</h1>
-        <section>
-            <label for="car">Select Car:</label>
-            <select v-model="selectedCar" @change="updateFuelConsumption" name="car">
-                <option v-for="car in cars" :key="car.name" :value="car">
-                    {{ car.name }}
-                </option>
-            </select>
-        </section>
         <section>
             <label for="range">Range Type:</label>
             <select v-model="selectedRangeType" name="range">
@@ -79,13 +90,23 @@ watch(range, () => {
             </select>
         </section>
         <section>
+            <label for="price">Price for 1 L:</label>
+            <input type="number" name="price" v-model="priceForLiter" @input="updateFuelConsumption" />
+        </section>
+        <section>
+            <label for="highway">Highway AVG:</label>
+            <input type="number" name="highway" v-model="highwayFuelConsumption" @input="updateFuelConsumption" />
+        </section>
+        <section>
+            <label for="city">City AVG:</label>
+            <input type="number" name="city" v-model="cityFuelConsumption" @input="updateFuelConsumption" />
+        </section>
+        <section>
             <label for="distance">Range (km):</label>
             <input type="number" name="distance" v-model="range" @input="calculateTotalFuelPrice" />
         </section>
-        <section>
+        <section class="result-section">
             <p>Fuel Consumption (L/100km): {{ fuelConsumption }}</p>
-        </section>
-        <section>
             <p>Total Fuel Price: {{ totalFuelPrice.toFixed(0) }} UAH</p>
         </section>
     </div>
@@ -126,8 +147,20 @@ label {
 section {
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+    width: 100%;
+}
+
+.result-section {
+    display: flex;
+    align-items: flex-start;
+    flex-direction: column;
     justify-content: center;
     gap: .5rem;
+    width: 100%;
+    padding-top: 1rem;
+    border-top: 1px solid #114971;
 }
 
 select {
